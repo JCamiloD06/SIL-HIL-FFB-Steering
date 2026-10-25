@@ -1,16 +1,5 @@
-# -*- coding: utf-8 -*-
-"""
-carga_hil.py
-Pacejka tire self-aligning torque dynamic feedforward coupling at 333 Hz.
-
-Author: Juan Camilo Diaz-Lopez
-Department of Mechanical and Mechatronics Engineering
-Universidad Nacional de Colombia, Sede La Paz
-Research Paper: Physical Steering Dynamics and Force-Feedback Loading
-                in Autonomous Path Tracking
-"""
-
 # carga_hil.py
+# Torque de carga de la condición HIL-L (Q2-D-034: el force feedback es obligatorio).
 #
 # El torque se aplica como feedforward en la misma placa (odrive_plant.set_position(θ, torque)),
 # sin tocar el lazo de posición ni el controlador lateral. Lo evalúa el hilo espejo de
@@ -66,6 +55,14 @@ class CargaHIL:
                        "unidad_k": "N·m por m/s²" if fuente == "modelo" else "N·m por unidad de finalFF"}
 
     def objetivo(self, estado):
+        """Torque sin filtrar ni saturar a partir de una fila de registro_ffb_ac."""
+        _, _, final_ff, _, _, acc_g_x, _, _ = estado
+        if self.fuente == "modelo":
+            return self.k * self.signo_vjoy * 9.81 * acc_g_x
+        return self.k * self.signo_ff * final_ff
+
+    def paso(self, t, estado):
+        """Torque a aplicar (N·m). estado = última fila de registro_ffb_ac o None."""
         if estado is None or t - estado[0] > self.max_edad_s or not math.isfinite(estado[2] if self.fuente == "finalff" else estado[5]):
             bruto = 0.0
         else:
@@ -85,7 +82,7 @@ class CargaHIL:
 
 
 def agregar_argumentos(ap):
-    g = ap.add_argument_group("carga HIL-L ")
+    g = ap.add_argument_group("carga HIL-L (Q2-D-034)")
     g.add_argument("--carga-fuente", choices=["modelo", "finalff"], help="fuente del torque de carga (HIL-L)")
     g.add_argument("--carga-k", type=float, help="ganancia: N·m por m/s² (modelo) o N·m por unidad de finalFF")
     g.add_argument("--carga-tau-max", type=float, default=1.0, help="saturación del torque de carga (N·m, por omisión 1.0, máx. 2)")

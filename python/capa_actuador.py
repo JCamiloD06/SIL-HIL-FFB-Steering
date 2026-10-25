@@ -1,17 +1,6 @@
-# -*- coding: utf-8 -*-
-"""
-capa_actuador.py
-Steering actuator hardware/simulation abstraction layer.
-
-Author: Juan Camilo Diaz-Lopez
-Department of Mechanical and Mechatronics Engineering
-Universidad Nacional de Colombia, Sede La Paz
-Research Paper: Physical Steering Dynamics and Force-Feedback Loading
-                in Autonomous Path Tracking
-"""
-
 # capa_actuador.py
 # Dinámica controlada que se agrega en el PC a la consigna del volante, para el barrido
+# de la dinámica del actuador (ítem D de Q2-D-018; Q2-D-021 y Q2-D-025).
 #
 # Orden: retardo puro → filtro de ancho de banda → límite de tasa.
 #   retardo   la salida es la entrada de hace retardo_s (retén de orden cero)
@@ -21,6 +10,7 @@ Research Paper: Physical Steering Dynamics and Force-Feedback Loading
 # Se evalúa con el reloj real en cada paso (dt variable): el PT1 usa la discretización
 # exacta para una entrada constante en el paso, a = 1 − exp(−ω·dt).
 #
+# Un nivel del barrido no es "un filtro": es un actuador distinto (Q2-D-018). Por eso cada
 # configuración de esta capa se identifica con c03/s13 junto con el servo, y la G_a que entra
 # en Γ_E es la del conjunto capa + servo.
 #
@@ -82,13 +72,38 @@ class CapaActuador:
         return x0 if t0 <= t - self.retardo_s else self._salida_inicial
 
     def paso(self, t, x):
+        """Salida de la capa en el instante t (s) para la entrada x (rad)."""
+        if self._t is None:
+            self.reiniciar(x, t)
+            self._hist.append((t, x))
+            return x
+        dt = max(0.0, t - self._t)
+        self._t = t
+        u = self._retrasada(t, x)
+        if self.w is not None:
+            a = 1.0 - math.exp(-self.w * dt)
+            self._y[0] += a * (u - self._y[0])
+            if self.orden == 2:
+                self._y[1] += a * (self._y[0] - self._y[1])
+                u = self._y[1]
+            else:
+                u = self._y[0]
+        if self.tasa is not None:
+            paso_max = self.tasa * dt
+            u = self._salida + max(-paso_max, min(paso_max, u - self._salida))
+        self._salida = u
+        return u
+
+
+def desde_argumentos(a):
+    """Crea la capa a partir de los argumentos --capa-* de los scripts (o None si no hay)."""
     capa = CapaActuador(bw_hz=a.capa_bw_hz, orden=a.capa_orden, retardo_s=a.capa_retardo_ms / 1000.0,
                         tasa_dps=a.capa_tasa_dps)
     return capa if capa.activa else None
 
 
 def agregar_argumentos(ap):
-    g = ap.add_argument_group("capa de dinámica en el PC (barrido,")
+    g = ap.add_argument_group("capa de dinámica en el PC (barrido, Q2-D-021/Q2-D-025)")
     g.add_argument("--capa-bw-hz", type=float, default=None, help="−3 dB del filtro agregado (Hz)")
     g.add_argument("--capa-orden", type=int, default=1, choices=[1, 2], help="1 = PT1, 2 = dos PT1 en cascada")
     g.add_argument("--capa-retardo-ms", type=float, default=0.0, help="retardo puro agregado (ms)")

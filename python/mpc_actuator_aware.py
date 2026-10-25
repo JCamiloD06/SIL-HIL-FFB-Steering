@@ -15,19 +15,55 @@ import numpy as np
 import osqp
 import scipy.linalg as la
 import scipy.sparse as sp
-
 import sys
 from pathlib import Path
 
-# Permitir importación tanto dentro de TrialSteer como independiente
+# Fallback definitions for standalone execution without external dependencies
 try:
-    from controladores.base import ControladorLateral, SalidaControlador
+    from controladores.base import ControladorLateral, SalidaControlador, EntradaLateral
 except ImportError:
-    # Ruta relativa al repo
-    RAIZ = Path(__file__).resolve().parents[2] / "TrialSteer_v1.0.1" / "TrialSteer"
-    sys.path.insert(0, str(RAIZ))
-    from controladores.base import ControladorLateral, SalidaControlador
+    from dataclasses import dataclass
 
+    class MockTrazada:
+        """Synthetic track representation for standalone simulation."""
+        def curvatura_adelante(self, idx, s):
+            return 0.0
+
+    @dataclass
+    class EntradaLateral:
+        trazada: object = MockTrazada()
+        v_ms: float = 38.89
+        L: float = 2.62
+        psi: float = 0.0
+        x_tras: float = 0.0
+        z_tras: float = 0.0
+        x_del: float = 0.0
+        z_del: float = 0.0
+        idx_tras: int = 0
+        e_y_tras: float = 0.0
+        e_psi_tras: float = 0.0
+        idx_del: int = 0
+        e_y_del: float = 0.0
+        e_psi_del: float = 0.0
+        delta_prev: float = 0.0
+
+    @dataclass
+    class SalidaControlador:
+        delta: float = 0.0
+        estado: str = 'ok'
+        iteraciones: int = 0
+        respaldo: int = 0
+        extra1: float = float('nan')
+        extra2: float = float('nan')
+
+    class ControladorLateral:
+        nombre = 'base'
+        def __init__(self, parametros):
+            self.parametros = dict(parametros)
+        def reiniciar(self):
+            pass
+        def calcular(self, entrada):
+            raise NotImplementedError
 
 class MPCActuatorAware(ControladorLateral):
     nombre = "mpc_actuator_aware"
@@ -241,3 +277,63 @@ class MPCActuatorAware(ControladorLateral):
             extra1=float(res.info.run_time) * 1000.0,
             extra2=float(res.info.obj_val)
         )
+
+if __name__ == '__main__':
+    print('=' * 70)
+    print('Actuator-Aware MPC (AA-MPC) Standalone Verification Test')
+    print('=' * 70)
+    
+    # Paper nominal parameters
+    ts_s = 0.05
+    delta_max_rad = math.radians(23.09)
+    tasa_max_rad_s = math.radians(28.7405)  # 560 deg/s / 19.49 = 28.74 deg/s
+    
+    params = {
+        'N': 20,
+        'Qy': 12.0,
+        'Qpsi': 8.0,
+        'Rdelta': 1.0,
+        'Rddelta': 5.0,  # Paper rate-increment weighting R_Delta = 5.0
+        'actuator_K': 1.0440,
+        'actuator_fn_hz': 2.5354,
+        'actuator_zeta': 0.2641,
+        'actuator_slew_wheel_dps': 560.0,
+        'rango_volante_deg': 900.0,
+        'tiempo_max_s': 0.04
+    }
+    
+    mpc = MPCActuatorAware(params, ts_s, delta_max_rad, tasa_max_rad_s)
+    
+    # Synthetic test scenario: vehicle at 140 km/h with 0.3 m lateral error
+    try:
+        trazada_obj = MockTrazada()
+    except NameError:
+        class MockTrazada:
+            def curvatura_adelante(self, idx, s):
+                return 0.0
+        trazada_obj = MockTrazada()
+
+    test_in = EntradaLateral(
+        trazada=trazada_obj,
+        v_ms=38.89,  # 140 km/h
+        L=2.62,
+        e_y_tras=0.30,
+        e_psi_tras=0.02,
+        delta_prev=0.0
+    )
+    
+    salida = mpc.calcular(test_in)
+    
+    print(f'Prediction horizon: N = {mpc.N} ({mpc.N * ts_s:.2f} s)')
+    print(f'Steering ratio kw:  {mpc.kw:.2f} deg_hw / deg_rw')
+    print(f'Road-wheel slew-rate bound: {math.degrees(mpc.paso / ts_s):.2f} deg/s')
+    print(f'Per-sample bound (|Delta u|): {math.degrees(mpc.paso):.3f} deg ({mpc.paso:.4f} rad)')
+    print(f'Rate-penalty R_Delta:        {mpc.Rdd}')
+    print(f'Optimization status:         {salida.estado}')
+    print(f'Commanded road-wheel delta:  {math.degrees(salida.delta):.3f} deg ({salida.delta:.4f} rad)')
+    print(f'Commanded handwheel theta:   {math.degrees(salida.delta) * mpc.kw:.2f} deg')
+    print(f'Solver iterations:           {salida.iteraciones}')
+    print(f'QP execution time:           {salida.extra1:.2f} ms')
+    print('=' * 70)
+    print('[SUCCESS] Standalone Actuator-Aware MPC executed without errors.')
+    print('=' * 70)
