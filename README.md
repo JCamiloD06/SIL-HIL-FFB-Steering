@@ -9,7 +9,6 @@ This repository contains the computational simulation scripts, vehicle dynamics 
 > **Physical Steering Dynamics and Force-Feedback Loading in Autonomous Path Tracking: When Do Software-in-the-Loop Results Transfer to Hardware-in-the-Loop?**  
 > *Juan Camilo Díaz-López, Jesús Alberto Lastra-Robles, and Francisco Javier Burgos-Flórez*  
 > Department of Mechanical and Mechatronics Engineering, Universidad Nacional de Colombia, Sede La Paz, Colombia.  
-> Published in: *Ingeniería e Investigación*.
 
 ---
 
