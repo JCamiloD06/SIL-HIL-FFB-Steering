@@ -1,0 +1,18 @@
+# Operating System
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# MATLAB
+*.asv
+*.mat.bak
+*.tmp
+
+# Temporary files
+*.swp
+*.bak
+*.log
