@@ -9,12 +9,19 @@ This repository contains the computational simulation scripts, vehicle dynamics 
 > **Physical Steering Dynamics and Force-Feedback Loading in Autonomous Path Tracking: When Do Software-in-the-Loop Results Transfer to Hardware-in-the-Loop?**  
 > *Juan Camilo Díaz-López, Jesús Alberto Lastra-Robles, and Francisco Javier Burgos-Flórez*  
 > Department of Mechanical and Mechatronics Engineering, Universidad Nacional de Colombia, Sede La Paz, Colombia.  
+> Submitted to: *Ingeniería e Investigación*.
 
 ---
 
 ## Overview
 
-The codebase provides open implementations for simulating, evaluating, and identifying lateral vehicle path-tracking controllers (Pure Pursuit, Stanley, Kinematic MPC, and Actuator-Aware MPC) subjected to physical steering actuator dynamics (transport delay $T_d = 6.38\text{ ms}$, bandwidth $f_{\text{bw}} = 2.78\text{ Hz}$, rate limits $\dot{\delta}_{\max} = 28.74^\circ/\text{s}$, and reactive Pacejka tire self-aligning moments).
+The codebase provides open implementations for simulating, evaluating, and identifying lateral vehicle path-tracking controllers (Pure Pursuit, Stanley, Kinematic MPC, and Actuator-Aware MPC) subjected to physical steering actuator dynamics:
+- Transport delay: $T_d = 6.38\text{ ms}$
+- Actuator bandwidth: $f_{\text{bw}} = 2.78\text{ Hz}$ (second-order $\omega_n = 15.93\text{ rad/s}$, $\zeta = 0.264$)
+- Front road-wheel slew-rate limit: $\dot{\delta}_{\max} = 28.74^\circ/\text{s}$ (corresponding to the $560.0^\circ/\text{s}$ physical direct-drive motor limit with steering ratio $k_w = 19.49$)
+- Reactive tire self-aligning torque loading ($M_z$) via force-feedback coupling.
+
+> **Note on Model Fidelity:** The standalone computational scripts in the `matlab/` directory implement a 2-DOF dynamic lateral bicycle model coupled with non-linear Magic Formula (Pacejka) tire contact mechanics for fast, reproducible numerical benchmarking. The multi-body vehicle dynamics reported in the experimental paper were executed in real time within Assetto Corsa (v1.16.4) at 333 Hz, coupled to the physical direct-drive ODrive steering test bench via shared memory.
 
 ---
 
@@ -22,24 +29,35 @@ The codebase provides open implementations for simulating, evaluating, and ident
 
 ```text
 SIL-HIL-FFB-Steering/
-├── matlab/                                 # MATLAB simulation and analytical modeling
-│   ├── simulacion_lazo_cerrado.m           # Closed-loop lateral simulation of vehicle and steering dynamics
-│   ├── simulacion_lazo_identificado.m      # Closed-loop simulation with identified actuator dynamics
-│   ├── identificacion_actuador.m           # Transfer function identification of steering actuator Ga(s)
-│   ├── modelo_vehiculo_2dof.m              # 2-DOF lateral bicycle dynamics and understeer calculation
-│   ├── identificar_vehiculo.m              # Linear bicycle model fitting and validation
-│   ├── espectro_comando.m                  # Power spectral density calculation of steering commands
-│   ├── indice_compatibilidad_gamma.m       # Computation of Spectral Compatibility Index (Gamma_E)
-│   ├── evaluacion_resultados_benchmark.m   # Lateral tracking RMSE and completion metrics evaluation
-│   └── simulacion_transitoria_chicane.m    # High-speed transient chicane dynamic analysis
-├── python/                                 # Real-time control and Hardware-in-the-Loop algorithms
-│   ├── mpc_actuator_aware.py               # Actuator-Aware MPC QP formulation with rate bounds
-│   ├── carga_hil.py                        # Dynamic tire self-aligning torque feedforward coupling
-│   ├── capa_actuador.py                    # Actuator simulation and hardware abstraction layer
-│   ├── salida_odrive.py                    # Direct-drive BLDC communication & 200 Hz position ramp
-│   └── correr_trialsteer.py                # Real-time simulation and benchmark orchestrator
-├── .gitignore                              # Git exclusion rules
-└── README.md                               # Repository documentation
+|-- matlab/                                 # MATLAB simulation and analytical modeling
+|   |-- simulacion_lazo_cerrado.m           # Closed-loop lateral simulation of vehicle and steering dynamics
+|   |-- simulacion_lazo_identificado.m      # Closed-loop simulation with identified actuator dynamics
+|   |-- identificacion_actuador.m           # Transfer function identification of steering actuator Ga(s)
+|   |-- modelo_vehiculo_2dof.m              # 2-DOF lateral bicycle dynamics and understeer calculation
+|   |-- identificar_vehiculo.m              # Linear bicycle model fitting and validation
+|   |-- espectro_comando.m                  # Power spectral density calculation of steering commands
+|   |-- indice_compatibilidad_gamma.m       # Computation of Spectral Compatibility Index (Gamma_E)
+|   |-- evaluacion_resultados_benchmark.m   # Lateral tracking RMSE and completion metrics evaluation
+|   |-- simulacion_transitoria_chicane.m    # High-speed transient chicane dynamic analysis
+|   |-- s10_caracterizacion_escalones.m     # Experimental step response actuator characterization
+|   |-- s13_identificacion_banco.m          # Actuator frequency response identification
+|   |-- s14_espectro_comando.m              # Controller command frequency spectrum processing
+|   |-- s15_cadena_vehicular.m              # End-to-end steering chain validation
+|   |-- s17_ffb_ac.m                        # Assetto Corsa force-feedback telemetric coupling
+|   |-- s21_servo_volante.m                 # Closed-loop steering servomotor response
+|   |-- s24_identificar_vehiculo.m          # Experimental vehicle dynamics identification
+|   |-- s29_indice_compatibilidad_gamma.m   # Spectral compatibility index evaluation
+|   |-- s31_analisis_estadistico_vsd.m      # Factorial experimental campaign statistical analysis
+|   \-- s37_analisis_campana_hill.m         # Complete HIL-L vs HIL-U experimental comparison
+|-- python/                                 # Real-time control and Hardware-in-the-Loop algorithms
+|   |-- mpc_actuator_aware.py               # Actuator-Aware MPC QP formulation with rate bounds
+|   |-- carga_hil.py                        # Dynamic tire self-aligning torque feedforward coupling
+|   |-- capa_actuador.py                    # Actuator simulation and hardware abstraction layer
+|   |-- salida_odrive.py                    # Direct-drive BLDC communication & 200 Hz position ramp
+|   \-- correr_trialsteer.py                # Real-time simulation and benchmark orchestrator
+|-- .gitignore                              # Git exclusion rules
+|-- LICENSE                                 # MIT License
+\-- README.md                               # Repository documentation
 ```
 
 ---
@@ -47,7 +65,7 @@ SIL-HIL-FFB-Steering/
 ## Requirements
 
 - **MATLAB:** R2022b or later (Toolboxes: *Control System Toolbox*, *Signal Processing Toolbox*, *Statistics and Machine Learning Toolbox*).
-- **Python:** 3.10 or later (Libraries: `numpy`, `scipy`, `odrive`, `pyvjoy`).
+- **Python:** 3.10 or later (Libraries: `numpy`, `scipy`, `osqp`, `odrive`, `pyvjoy`).
 
 ---
 
