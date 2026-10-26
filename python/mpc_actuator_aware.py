@@ -78,7 +78,7 @@ class MPCActuatorAware(ControladorLateral):
         self.Qy = float(p.get("Qy", 1.0))
         self.Qpsi = float(p.get("Qpsi", 33.167603))
         self.Rd = float(p.get("Rdelta", 8.147265))
-        self.Rdd = float(p.get("Rddelta", 3.092056))
+        self.Rdd = float(p.get("Rddelta", 5.0))
         self.parametros["Rddelta"] = self.Rdd
         self.tiempo_max = float(p.get("tiempo_max_s", 0.04))
         self.ts = float(ts_s)

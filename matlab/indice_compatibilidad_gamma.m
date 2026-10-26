@@ -19,7 +19,9 @@ zeta_act = 0.26412;
 K_act = 1.0439;
 Td_act = 0.0063757; % s (retardo puro)
 wn_act = 2 * pi * fn_act;
-f_BW_act = 3.7507; % Hz (-3 dB)
+% Ancho de banda operativo medido vs analitico lineal (Seccion 2.2 y Tabla 3 del manuscrito)
+f_BW_act = 2.78;   % Hz (-3 dB operativo medido bajo friccion seca Delta_tau_dry = 0.18 N*m)
+f_BW_lin = 3.7432; % Hz (-3 dB analitico del modelo lineal continuo; 3.75 Hz en rejilla discreta de s14)
 slew_lim_dps = 560.0; % deg/s
 deadband_deg = 0.5;   % deg (zona muerta de fricción / stiction c01)
 kw = 19.4888;         % deg volante por deg rueda (900 deg)
