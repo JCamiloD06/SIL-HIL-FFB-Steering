@@ -4,10 +4,10 @@ mpc_actuator_aware.py
 Actuator-Aware MPC QP formulation with slew-rate constraints.
 
 Author: Juan Camilo Diaz-Lopez
-Department of Mechanical and Mechatronics Engineering
 Universidad Nacional de Colombia, Sede La Paz
-Research Paper: Physical Steering Dynamics and Force-Feedback Loading
-                in Autonomous Path Tracking
+Research Paper: Software-to-Hardware-in-the-Loop Transferability of
+                Autonomous Path Tracking under Physical Steering Dynamics
+                and Force-Feedback Loading (Ingenieria e Investigacion)
 """
 
 import math

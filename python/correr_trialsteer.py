@@ -1,14 +1,14 @@
 # correr_trialsteer.py
-# Corre TrialSteer v1.0.1 (código congelado del paper 1) en SIL, HIL-U o HIL-L.
+# Corre TrialSteer v1.0.1 (ejecución de referencia SIL) en SIL, HIL-U o HIL-L.
 #
 #   SIL   : TrialSteer tal cual. δ → vJoy (SalidaVJoy original).
 #   HIL-U : δ → volante físico (Odrive-Wheel) → δ_meas → vJoy (SalidaODrive). Sin FFB.
-#   HIL-L : HIL-U + torque de carga como feedforward en la misma placa (carga_hil.py, Q2-D-034):
+#   HIL-L : HIL-U + torque de carga como feedforward en la misma placa (carga_hil.py, Carga FFB reactiva):
 #           --carga-fuente modelo|finalff --carga-k ... [--carga-signo-ff ±1] [--carga-tau-max 0.5]
 #
 # En las dos condiciones se registra además la señal de FFB de AC (finalFF, registro_ffb_ac.py)
 # en ac_ffb.csv, y en HIL-U la corriente, el voltaje y la temperatura de la placa en
-# odrive_electrico.csv (2026-10-08, plan Q1 apéndice A y Q2-D-034).
+# odrive_electrico.csv (2026-10-08, plan Q1 apéndice A y Carga FFB reactiva).
 #
 # No se modifica ningún archivo de scripts/acq/TrialSteer_v1.0.1. Este script
 # importa su ejecutar_corrida.py y, antes de llamar a main(), cambia solo dos
@@ -100,10 +100,10 @@ def main():
     ap = argparse.ArgumentParser(add_help=False)
     ap.add_argument("--condicion", required=True, choices=["SIL", "HIL-U", "HIL-L"])
     ap.add_argument("--port", help="puerto COM de la placa (HIL-U)")
-    # Sin valor por omisión: el antiguo (360°, k ≈ 7,8) ya no es el aprobado (Q2-D-035: 900°,
+    # Sin valor por omisión: el antiguo (360°, k ≈ 7,8) ya no es el aprobado (Configuración de lock de volante: 900°,
     # k ≈ 19,5, = LOCK de AC) y el banco solo se ha probado hasta ±57°. En HIL-U es obligatorio.
     ap.add_argument("--rango-volante-deg", type=float, default=None,
-                    help="ángulo de volante del eje de vJoy completo (HIL-U, obligatorio); 900 según Q2-D-035 (LOCK del volante vJoy en el controls.ini de AC)")
+                    help="ángulo de volante del eje de vJoy completo (HIL-U, obligatorio); 900 según Configuración de lock de volante (LOCK del volante vJoy en el controls.ini de AC)")
     ap.add_argument("--vel-limit-tps", type=float, default=2.0, help="vel_limit de la placa (HIL-U); 2 vueltas/s = 720 °/s (decisión del investigador, 2026-10-07)")
     ap.add_argument("--no-preparar-ac", action="store_true",
                     help="no abrir ni preparar Assetto Corsa (debe estar en pista y con vJoy al mando)")
@@ -228,7 +228,7 @@ def main():
     # 2. Volante físico (HIL-U): se centra a mano y se arma justo antes del bucle.
     if fisico:
         if propios.rango_volante_deg is None:
-            sys.exit(f"{propios.condicion} necesita --rango-volante-deg (900 según Q2-D-035 (LOCK del volante vJoy en el controls.ini de AC)).")
+            sys.exit(f"{propios.condicion} necesita --rango-volante-deg (900 según Configuración de lock de volante (LOCK del volante vJoy en el controls.ini de AC)).")
         from odrive_plant import ODriveSteeringPlant
         from salida_odrive import SalidaODrive
         capa = desde_argumentos(propios)

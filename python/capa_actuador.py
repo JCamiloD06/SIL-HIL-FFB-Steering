@@ -1,6 +1,6 @@
 # capa_actuador.py
 # Dinámica controlada que se agrega en el PC a la consigna del volante, para el barrido
-# de la dinámica del actuador (ítem D de Q2-D-018; Q2-D-021 y Q2-D-025).
+# de la dinámica del actuador (ítem D de Barrido de dinámica del actuador).
 #
 # Orden: retardo puro → filtro de ancho de banda → límite de tasa.
 #   retardo   la salida es la entrada de hace retardo_s (retén de orden cero)

@@ -1,5 +1,5 @@
 # salida_odrive.py
-# Salida de dirección HIL para TrialSteer v1.0.1 (Q2-D-013, 2026-10-07).
+# Salida de dirección HIL para TrialSteer v1.0.1 (Interfaz de dirección HIL).
 #
 # Misma interfaz que plataforma.actuador.SalidaVJoy: enviar(delta_rad, u_long)
 # devuelve (gas, freno, norm, sat_eje) y centrar() suelta todo. Los
@@ -9,7 +9,7 @@
 #   δ de rueda (rad) → θ_cmd = δ·k (volante) → placa Odrive-Wheel (lazo de posición a 8 kHz)
 #   → encoder θ_meas → vJoy X = θ_meas/(rango/2) → Assetto Corsa
 # con k = (rango/2) / rueda_rad_eje_completo. Con rango 360° y 0,403 rad, k ≈ 7,8;
-# con 900° (Q2-D-035: LOCK del volante vJoy en el controls.ini de AC), k ≈ 19,5. El valor por omisión de rango_volante_deg (360) solo
+# con 900° (Configuración de lock de volante: LOCK del volante vJoy en el controls.ini de AC), k ≈ 19,5. El valor por omisión de rango_volante_deg (360) solo
 # queda por compatibilidad; los scripts que llaman a esta clase lo exigen explícito.
 # Así el eje de vJoy a fondo es el mismo en SIL y en HIL: δ/0,403 en SIL y
 # δ_meas/0,403 en HIL.
@@ -35,7 +35,7 @@
 # opcionales: si una propiedad no existe en el firmware, se registra NaN y se deja de pedir
 # tras 3 fallos seguidos, sin cortar la corrida. La versión del firmware va en config.
 #
-# Carga HIL-L (Q2-D-034, carga_hil.py): si se pasa carga y estado_ac (función que devuelve la última
+# Carga HIL-L (Carga FFB reactiva, carga_hil.py): si se pasa carga y estado_ac (función que devuelve la última
 # fila de registro_ffb_ac), el hilo espejo calcula el torque en cada paso y lo manda con la consigna
 # de posición como feedforward. Sin carga, el comando a la placa es el mismo de HIL-U.
 # Con ffb (ffb_hid.FFBHid, opción A, 2026-10-08) el torque va por el force feedback USB HID de
@@ -87,7 +87,7 @@ class SalidaODrive:
         # Tope del banco (2026-10-08, primera HIL-U): en la salida desde parado el lazo cerrado llevó
         # el volante a +355° (consigna +320° y sobrepaso) y algo lo retuvo cerca de +350° con 4,5 A
         # (cable o roce). La consigna se satura en ±limite_volante_deg (250°) y el corte por ángulo
-        # queda en limite + 80° (330°), antes del obstáculo. En la vuelta medida del paper 1 el
+        # queda en limite + 80° (330°), antes del obstáculo. En la vuelta medida del referencia SIL el
         # volante no pasa de ~155° con 900°: el tope solo actúa en la salida desde parado.
         self.limite = math.radians(limite_volante_deg)
         # Arranque en SIL (2026-10-08, primera HIL-U completa): en la salida desde parado Stanley

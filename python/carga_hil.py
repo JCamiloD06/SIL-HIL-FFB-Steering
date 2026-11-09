@@ -1,12 +1,12 @@
 # carga_hil.py
-# Torque de carga de la condición HIL-L (Q2-D-034: el force feedback es obligatorio).
+# Torque de carga de la condición HIL-L (el force feedback reproduce el par alineante).
 #
 # El torque se aplica como feedforward en la misma placa (odrive_plant.set_position(θ, torque)),
 # sin tocar el lazo de posición ni el controlador lateral. Lo evalúa el hilo espejo de
 # SalidaODrive cada ~5 ms con el último estado de AC que leyó registro_ffb_ac.py (~100 Hz).
 #
 # Convención: τ > 0 empuja el volante a la derecha (θ > 0). Una carga alineante se opone al giro.
-# En el paper 1, steer_norm > 0 va con acc_g_x < 0 (r = −0,77 a −0,81 en las 9 corridas de la
+# En el referencia SIL, steer_norm > 0 va con acc_g_x < 0 (r = −0,77 a −0,81 en las 9 corridas de la
 # sesión 01, v > 30 km/h; verificado 2026-10-08). Con signo_vjoy = +1, θ > 0 ⇒ a_y = 9,81·acc_g_x < 0,
 # así que τ = +k·signo_vjoy·a_y se opone a θ.
 #
@@ -82,7 +82,7 @@ class CargaHIL:
 
 
 def agregar_argumentos(ap):
-    g = ap.add_argument_group("carga HIL-L (Q2-D-034)")
+    g = ap.add_argument_group("carga HIL-L (Carga FFB reactiva)")
     g.add_argument("--carga-fuente", choices=["modelo", "finalff"], help="fuente del torque de carga (HIL-L)")
     g.add_argument("--carga-k", type=float, help="ganancia: N·m por m/s² (modelo) o N·m por unidad de finalFF")
     g.add_argument("--carga-tau-max", type=float, default=1.0, help="saturación del torque de carga (N·m, por omisión 1.0, máx. 2)")
